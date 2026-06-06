@@ -69,15 +69,58 @@ LLM_MODEL=anthropic/claude-3.5-sonnet
 
 ### 4. Google 認証情報の準備
 
-1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成
-2. **Analytics API** と **Search Console API** を有効化
-3. サービスアカウントを作成し、JSONキーをダウンロード
-4. GA4プロパティとSearch Consoleのプロパティにサービスアカウントを追加（閲覧者権限）
-5. ダウンロードしたJSONを配置:
+#### 4.1 Google Cloud プロジェクトを作成
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. 画面上部のプロジェクト選択メニューから **「新しいプロジェクト」** をクリック
+3. プロジェクト名を入力し、**「作成」** をクリック
+
+#### 4.2 API を有効化
+
+1. ナビゲーションメニュー（≡）→ **「APIとサービス」** → **「ライブラリ」**
+2. 以下の2つのAPIを検索して、それぞれ **「有効にする」** をクリック:
+  - **Google Analytics Data API**
+  - **Google Search Console API**
+
+#### 4.3 サービスアカウントを作成
+
+1. ナビゲーションメニュー → **「IAMと管理」** → **「サービスアカウント」**
+2. **「サービスアカウントを作成」** をクリック
+3. **ステップ1**: サービスアカウント名を入力（例: `build-in-public`）
+  - サービスアカウントIDが自動生成されます
+  - **「作成して続行」** をクリック
+4. **ステップ2**: ロールの付与は不要なので **「完了」** をクリック
+
+#### 4.4 JSON キーを作成・ダウンロード
+
+1. 作成したサービスアカウントをクリック
+2. **「キー」** タブを選択
+3. **「鍵を追加」** → **「新しい鍵を作成」**
+4. **JSON** を選択し、**「作成」** をクリック
+5. 自動的に `.json` ファイルがダウンロードされます
+6. ダウンロードしたJSONをプロジェクトに配置:
 
 ```bash
-cp ~/Downloads/my-service-account.json credentials/service-account.json
+cp ~/Downloads/build-in-public-xxxxxxxx.json credentials/service-account.json
 ```
+
+#### 4.5 GA4 に権限を付与
+
+1. [Google Analytics](https://analytics.google.com/) にアクセス
+2. 対象のプロパティを開く
+3. 左下の歯車アイコン → **「プロパティ」** → **「プロパティのアクセス権限の管理」**
+4. **「アクセス権限を付与する」** をクリック
+5. サービスアカウントのメールアドレス（例: `build-in-public@your-project.iam.gserviceaccount.com`）を入力
+6. ロールを **「閲覧者」** に設定し、**「追加」**
+
+#### 4.6 Search Console に権限を付与
+
+1. [Google Search Console](https://search.google.com/search-console) にアクセス
+2. 対象のプロパティを選択
+3. 左メニューの歯車アイコン → **「ユーザーと権限」**
+4. **「ユーザーを追加」** をクリック
+5. サービスアカウントのメールアドレスを入力
+6. 権限を **「閲覧者」** に設定し、**「追加」**
 
 ### 5. 実行
 
@@ -104,13 +147,15 @@ python3 -m build_in_public generate --force
 
 ### トラブルシューティング
 
-| エラー | 対処法 |
-|---|---|
-| `Config Error: config.yaml not found` | リポジトリのルートに `config.yaml` があるか確認 |
-| `Config Error: Credentials file not found` | `credentials/service-account.json` を配置 |
-| `GA4 API Error: 認証情報を確認してください` | サービスアカウントにGA4の閲覧権限があるか確認 |
-| `Search Console API Error` | サイトURLの形式を確認 (`sc-domain:` または `https://`) |
-| `LLM Error` | `.env` の `OPENROUTER_API_KEY` が正しいか確認 |
+
+| エラー                                        | 対処法                                        |
+| ------------------------------------------ | ------------------------------------------ |
+| `Config Error: config.yaml not found`      | リポジトリのルートに `config.yaml` があるか確認            |
+| `Config Error: Credentials file not found` | `credentials/service-account.json` を配置     |
+| `GA4 API Error: 認証情報を確認してください`             | サービスアカウントにGA4の閲覧権限があるか確認                   |
+| `Search Console API Error`                 | サイトURLの形式を確認 (`sc-domain:` または `https://`) |
+| `LLM Error`                                | `.env` の `OPENROUTER_API_KEY` が正しいか確認      |
+
 
 ---
 
