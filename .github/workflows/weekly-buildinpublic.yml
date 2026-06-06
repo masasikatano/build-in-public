@@ -1,0 +1,51 @@
+name: Weekly Build in Public Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # 毎週月曜日 09:00 UTC
+  workflow_dispatch:      # 手動実行も可能
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Write credentials
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          mkdir -p credentials
+          echo "$GOOGLE_CREDENTIALS_JSON" | base64 -d > credentials/service-account.json
+
+      - name: Generate report
+        env:
+          GOOGLE_CREDENTIALS_PATH: credentials/service-account.json
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LLM_PROVIDER: openrouter
+          LLM_MODEL: anthropic/claude-3.5-sonnet
+        run: python -m build_in_public generate --force
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add posts/
+          git add data/archive/
+          git diff --cached --quiet || (git commit -m "chore: weekly build in public report $(date +%Y-%m-%d)" && git push)
+
+      - name: Notify Discord (optional)
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d '{"content":"📊 今週のBuild in Publicレポートが生成されました！"}' \
+               $DISCORD_WEBHOOK_URL || true
