@@ -20,9 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Config
-config.yaml
-
 # Virtual environments
 .venv
 venv/
@@ -36,6 +33,7 @@ ENV/
 
 # Environment variables
 .env
+config.yaml
 
 # Credentials
 credentials/*.json
