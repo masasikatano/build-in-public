@@ -7,7 +7,19 @@ def format_commit_summary(commits: List[Dict[str, Any]], date_str: str) -> str:
         author = commit.get("author") or "unknown"
         message = commit.get("message") or ""
         sha = commit.get("sha") or ""
-        lines.append(f"{i}. `{sha}` by @{author} — {message}")
+        stats = commit.get("stats", {})
+        files = commit.get("files", [])
+        additions = stats.get("additions", 0)
+        deletions = stats.get("deletions", 0)
+        file_count = len(files)
+        top_files = [f["filename"].split("/")[-1] for f in files[:3] if f.get("filename")]
+        file_str = ""
+        if top_files:
+            file_str = f" ({', '.join(top_files)}"
+            if file_count > 3:
+                file_str += f" など{file_count}ファイル"
+            file_str += ")"
+        lines.append(f"{i}. `{sha}` by @{author} — {message} (+{additions}/-{deletions}){file_str}")
     return "\n".join(lines)
 
 
@@ -19,14 +31,23 @@ def format_commit_log(commits: List[Dict[str, Any]]) -> str:
         author = commit.get("author") or "unknown"
         message = commit.get("message") or ""
         sha = commit.get("sha") or ""
-        lines.append(f"- `{sha}` — {message} by @{author}")
+        stats = commit.get("stats", {})
+        additions = stats.get("additions", 0)
+        deletions = stats.get("deletions", 0)
+        lines.append(f"- `{sha}` — {message} by @{author} (+{additions}/-{deletions})")
     return "\n".join(lines)
 
 
 def build_activity_summary(commits: List[Dict[str, Any]]) -> str:
     if not commits:
         return "本日はコミットがありませんでした。"
-    lines = [f"- Commits: {len(commits)}件"]
+    total_additions = sum(c.get("stats", {}).get("additions", 0) for c in commits)
+    total_deletions = sum(c.get("stats", {}).get("deletions", 0) for c in commits)
+    total_files = sum(len(c.get("files", [])) for c in commits)
+    lines = [
+        f"- Commits: {len(commits)}件",
+        f"- 変更: +{total_additions}/-{total_deletions} 行 ({total_files}ファイル)",
+    ]
     # List top 3 commit messages as "main changes"
     messages = [c.get("message", "") for c in commits if c.get("message")]
     if messages:

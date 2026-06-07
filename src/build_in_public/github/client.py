@@ -124,3 +124,67 @@ def fetch_commits(
         next_url = _parse_link_header(response.headers.get("Link"))
 
     return all_commits
+
+
+def fetch_commit_detail(
+    repo: str,
+    sha: str,
+    token: str | None,
+) -> Dict[str, Any]:
+    url = f"{GITHUB_API_BASE}/repos/{repo}/commits/{sha}"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    try:
+        response = requests.get(url, headers=headers, timeout=60)
+    except requests.exceptions.RequestException as e:
+        print(f"GitHub Error: {e}", file=sys.stderr)
+        return {}
+
+    if not response.ok:
+        print(f"GitHub Error: {response.status_code} - {response.text}", file=sys.stderr)
+        return {}
+
+    try:
+        data = response.json()
+    except Exception as e:
+        print(f"GitHub Error: Failed to parse response: {e}", file=sys.stderr)
+        return {}
+
+    stats = data.get("stats", {})
+    files = [
+        {
+            "filename": f.get("filename", ""),
+            "status": f.get("status", ""),
+            "additions": f.get("additions", 0),
+            "deletions": f.get("deletions", 0),
+        }
+        for f in data.get("files", [])
+    ]
+    return {"stats": stats, "files": files}
+
+
+def enrich_commits_with_details(
+    commits: List[Dict[str, Any]],
+    repo: str,
+    token: str | None,
+) -> List[Dict[str, Any]]:
+    import time
+
+    total = len(commits)
+    if total > 50:
+        print(f"Warning: {total} commits found. Fetching details for each may take a while.")
+
+    enriched = []
+    for i, commit in enumerate(commits, 1):
+        detail = fetch_commit_detail(repo, commit["sha"], token)
+        commit["stats"] = detail.get("stats", {})
+        commit["files"] = detail.get("files", [])
+        enriched.append(commit)
+        if i < total:
+            time.sleep(0.3)
+    return enriched

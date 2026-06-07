@@ -6,7 +6,7 @@ from typing import List
 
 from build_in_public.analytics.ga4 import fetch_ga4_data, get_client as get_ga4_client
 from build_in_public.config import load_config, load_env, validate_config, validate_github_config
-from build_in_public.github.client import fetch_commits
+from build_in_public.github.client import enrich_commits_with_details, fetch_commits
 from build_in_public.github.formatter import build_activity_summary, format_commit_log, format_commit_summary
 from build_in_public.llm.client import call_llm
 from build_in_public.llm.prompt_builder import build_user_prompt, load_system_prompt, parse_post_patterns
@@ -153,6 +153,9 @@ def github_command(args: argparse.Namespace) -> None:
 
     if not commits:
         print("Warning: No commits found for the specified date.")
+
+    print("Fetching commit details (diff stats)...")
+    commits = enrich_commits_with_details(commits, repo, token)
 
     commit_summary = format_commit_summary(commits, date_str)
     activity_summary = build_activity_summary(commits)
