@@ -1,6 +1,10 @@
 以下は今週のサイト分析サマリーです。
 
+{% if data_type == "github_daily" %}
+{{commit_summary}}
+{% else %}
 {{analytics_summary}}
+{% endif %}
 
 ---
 

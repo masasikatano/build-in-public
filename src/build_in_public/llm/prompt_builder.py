@@ -40,19 +40,23 @@ def load_few_shot_examples(examples_file: str, max_examples: int = 5) -> str:
 def build_user_prompt(
     prompts_dir: str,
     examples_file: str,
-    analytics_summary: str,
+    analytics_summary: str = "",
     site_name: str = "",
     site_url: str = "",
     site_description: str = "",
+    data_type: str = "ga_weekly",
+    commit_summary: str = "",
 ) -> str:
     template = load_generate_template(prompts_dir)
     few_shot = load_few_shot_examples(examples_file)
     return template.render(
         analytics_summary=analytics_summary,
+        commit_summary=commit_summary,
         few_shot_examples=few_shot,
         site_name=site_name,
         site_url=site_url,
         site_description=site_description,
+        data_type=data_type,
     )
 
 

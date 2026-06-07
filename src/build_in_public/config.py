@@ -23,12 +23,25 @@ def load_env() -> dict:
     load_dotenv()
     env = {
         "GOOGLE_CREDENTIALS_PATH": os.getenv("GOOGLE_CREDENTIALS_PATH", ""),
+        "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", ""),
         "OPENROUTER_API_KEY": os.getenv("OPENROUTER_API_KEY", ""),
         "LLM_PROVIDER": os.getenv("LLM_PROVIDER", "openrouter"),
         "LLM_MODEL": os.getenv("LLM_MODEL", "anthropic/claude-3.5-sonnet"),
         "DISCORD_WEBHOOK_URL": os.getenv("DISCORD_WEBHOOK_URL", ""),
     }
     return env
+
+
+def validate_github_config(config: dict, env: dict) -> dict:
+    if not config.get("github_repo"):
+        print("Config Error: github_repo is required in config.yaml", file=sys.stderr)
+        sys.exit(1)
+
+    if not env.get("OPENROUTER_API_KEY"):
+        print("Config Error: OPENROUTER_API_KEY is required in .env", file=sys.stderr)
+        sys.exit(1)
+
+    return {**config, **env}
 
 
 def validate_config(config: dict, env: dict) -> dict:

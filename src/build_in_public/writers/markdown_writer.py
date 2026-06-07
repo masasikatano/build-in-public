@@ -95,3 +95,54 @@ def write_report(
     content = "\n".join(lines)
     file_path.write_text(content, encoding="utf-8")
     return file_path
+
+
+def write_daily_report(
+    posts_dir: str,
+    date_str: str,
+    activity_summary: str,
+    patterns: List[str],
+    commit_log: str,
+    repo_url: str,
+    model_used: str = "",
+) -> Path:
+    dir_path = Path(posts_dir) / "daily"
+    dir_path.mkdir(parents=True, exist_ok=True)
+    file_path = dir_path / f"{date_str}.md"
+
+    lines: List[str] = [
+        f"# Daily Build in Public: {date_str}",
+        "",
+        "## 📊 Today's Activity",
+        activity_summary,
+        "",
+        "## 📝 Post Drafts",
+        "",
+        "### Pattern A: Straight",
+        patterns[0] if len(patterns) > 0 else "",
+        repo_url,
+        "",
+        "### Pattern B: Self-deprecating",
+        patterns[1] if len(patterns) > 1 else "",
+        repo_url,
+        "",
+        "### Pattern C: Future-oriented",
+        patterns[2] if len(patterns) > 2 else "",
+        repo_url,
+        "",
+        "## 📋 Commit Log (詳細)",
+        commit_log,
+        "",
+        f"→ Full history: {repo_url}/commits/main",
+    ]
+
+    if model_used:
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.append(f"*Generated with: `{model_used}`*")
+
+    lines.append("")
+    content = "\n".join(lines)
+    file_path.write_text(content, encoding="utf-8")
+    return file_path
