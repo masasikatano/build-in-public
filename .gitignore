@@ -37,13 +37,14 @@ config.yaml
 
 # Posts
 posts/*.md
+posts/daily/*.md
 
 # Credentials
 credentials/*.json
 !credentials/.gitkeep
 
 # Data archives (keep structure but ignore contents optionally)
-# data/archive/*.json
+data/archive/*.json
 
 # OS
 .DS_Store
