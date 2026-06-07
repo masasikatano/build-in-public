@@ -30,5 +30,5 @@
       }
     ]
   },
-  "model_used": "openai/gpt-oss-20b:free"
+  "model_used": "moonshotai/kimi-k2.6-20260420:free"
 }
