@@ -35,6 +35,9 @@ ENV/
 .env
 config.yaml
 
+# Posts
+posts/*.md
+
 # Credentials
 credentials/*.json
 !credentials/.gitkeep
