@@ -52,11 +52,12 @@ def generate_command(args: argparse.Namespace) -> None:
         analytics_summary,
         site_name=settings.get("site_name", ""),
         site_url=settings.get("site_url", ""),
+        site_description=settings.get("site_description", ""),
     )
 
     # Call LLM
     print("Generating post drafts via LLM...")
-    raw_response = call_llm(
+    raw_response, model_used = call_llm(
         api_key=settings["OPENROUTER_API_KEY"],
         model=settings["LLM_MODEL"],
         system_prompt=system_prompt,
@@ -88,6 +89,7 @@ def generate_command(args: argparse.Namespace) -> None:
         analytics_summary,
         patterns,
         notes,
+        model_used=model_used,
     )
     print(f"Report written: {report_path}")
 
@@ -97,6 +99,7 @@ def generate_command(args: argparse.Namespace) -> None:
         "start": start.isoformat(),
         "end": end.isoformat(),
         "ga4": ga4_data,
+        "model_used": model_used,
     }
     save_week_data(settings["archive_dir"], start, archive_data)
     print("Archive saved.")

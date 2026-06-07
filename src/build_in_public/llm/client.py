@@ -11,13 +11,14 @@ def call_llm(
     system_prompt: str,
     user_prompt: str,
     base_url: str = "https://openrouter.ai/api/v1",
-) -> str:
+) -> tuple[str, str]:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
     payload = {
         "model": model,
+        "temperature": 0.3,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -36,13 +37,14 @@ def call_llm(
             response.raise_for_status()
             data = response.json()
             content = data.get("choices", [{}])[0].get("message", {}).get("content")
+            actual_model = data.get("model", model)
             if content is None:
                 if attempt < max_retries - 1:
                     time.sleep(2)
                     continue
                 print("LLM Error: API returned empty content.", file=sys.stderr)
                 sys.exit(1)
-            return content
+            return content, actual_model
         except requests.exceptions.HTTPError as e:
             if response.status_code == 429:
                 print("API rate limit exceeded. しばらく待って再実行してください", file=sys.stderr)
@@ -59,4 +61,4 @@ def call_llm(
             print(f"LLM Error: {e}", file=sys.stderr)
             sys.exit(1)
 
-    return ""
+    return "", model

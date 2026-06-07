@@ -16,6 +16,7 @@
 
 - **サイト名**: {{site_name}}
 - **URL**: {{site_url}}
+- **サイト説明**: {{site_description}}
 
 ### 出力形式
 

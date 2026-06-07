@@ -53,6 +53,7 @@ def write_report(
     analytics_summary: str,
     patterns: List[str],
     notes: List[str],
+    model_used: str = "",
 ) -> Path:
     dir_path = Path(posts_dir)
     dir_path.mkdir(parents=True, exist_ok=True)
@@ -83,6 +84,12 @@ def write_report(
             lines.append(f"- {note}")
     else:
         lines.append("- 特になし")
+
+    if model_used:
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        lines.append(f"*Generated with: `{model_used}`*")
 
     lines.append("")
     content = "\n".join(lines)

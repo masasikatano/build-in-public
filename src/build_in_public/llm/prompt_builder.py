@@ -43,6 +43,7 @@ def build_user_prompt(
     analytics_summary: str,
     site_name: str = "",
     site_url: str = "",
+    site_description: str = "",
 ) -> str:
     template = load_generate_template(prompts_dir)
     few_shot = load_few_shot_examples(examples_file)
@@ -51,6 +52,7 @@ def build_user_prompt(
         few_shot_examples=few_shot,
         site_name=site_name,
         site_url=site_url,
+        site_description=site_description,
     )
 
 

@@ -29,5 +29,6 @@
         "views": 19
       }
     ]
-  }
+  },
+  "model_used": "openai/gpt-oss-20b:free"
 }

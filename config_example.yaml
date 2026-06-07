@@ -1,5 +1,6 @@
 site_name: "YourSite"
 site_url: "https://example.com"
+site_description: "自分が作っているサービスの簡単な説明（1文）"
 ga4_property_id: "123456789"
 language: "ja"
 default_tone: "levelsio"
