@@ -18,9 +18,7 @@ def format_change(value: float | None) -> str:
 
 def build_analytics_summary(
     ga4: Dict[str, Any],
-    sc: Dict[str, Any],
     prev_ga4: Dict[str, Any] | None,
-    prev_sc: Dict[str, Any] | None,
 ) -> str:
     lines: List[str] = []
 
@@ -36,17 +34,6 @@ def build_analytics_summary(
     lines.append("- **Top Pages**:")
     for i, page in enumerate(ga4.get("top_pages", []), 1):
         lines.append(f"  {i}. `{page['path']}` — {page['views']:,} views")
-
-    clicks_change = _pct_change(prev_sc, sc, "clicks") if prev_sc else None
-    impressions_change = _pct_change(prev_sc, sc, "impressions") if prev_sc else None
-
-    lines.append("- **Search Console**:")
-    lines.append(f"  - Clicks: {sc.get('clicks', 0):,}{format_change(clicks_change)}")
-    lines.append(f"  - Impressions: {sc.get('impressions', 0):,}{format_change(impressions_change)}")
-    lines.append(f"  - Avg Position: {sc.get('position', 0)}")
-    top_query = sc.get("top_queries", [{}])[0]
-    if top_query:
-        lines.append(f"  - Top Query: \"{top_query.get('query', '')}\" ({top_query.get('clicks', 0)} clicks)")
 
     return "\n".join(lines)
 

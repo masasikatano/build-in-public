@@ -10,7 +10,7 @@
 
 自分のX（Twitter）アカウントをBuild in Publicに変えるための、週次レポート・ポスト生成支援CLIツール。
 
-制作中のサイトの分析データ（Google Analytics 4 / Search Console）を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成する。
+制作中のサイトの分析データ（Google Analytics 4）を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成する。
 
 **核心理念**: 「自分用MVP」を最優先。過剰な抽象化やSaaS化を避け、まず自分が週1回サクッと使えるツールを作る。
 
@@ -32,7 +32,7 @@
 | ID | Requirement | Priority |
 |---|---|---|
 | FR-01 | GA4から週次データ（PV, Sessions, UU, 滞在時間, Top Pages）を取得する | Must |
-| FR-02 | Search Consoleから週次データ（Clicks, Impressions, Avg Position, 上位クエリ）を取得する | Must |
+
 | FR-03 | 前週との比較（%変化）をツール側で計算し、プロンプトに含める | Must |
 | FR-04 | Few-shot例（`examples/post_examples.md`）を読み込み、LLMプロンプトに注入する | Must |
 | FR-05 | OpenRouter経由でLLMを呼び出し、3パターンのポスト案を生成する | Must |
@@ -66,23 +66,12 @@
 - **認証**: Google Cloud サービスアカウント（JSONキー）
 - **必要なスコープ**: `https://www.googleapis.com/auth/analytics.readonly`
 
-### 4.2 Google Search Console
-
-- **API**: Google Search Console API v3
-- **指標**:
-  - `clicks`（クリック数）
-  - `impressions`（表示回数）
-  - `position`（平均掲載順位）
-  - `topQueries`（上位クエリTOP5）
-- **認証**: サービスアカウント（GA4と同じJSONキーで可）
-- **必要なスコープ**: `https://www.googleapis.com/auth/webmasters.readonly`
-
-### 4.3 Authentication Setup
+### 4.2 Authentication Setup
 
 1. Google Cloud Consoleでプロジェクト作成
-2. Analytics API と Search Console API を有効化
+2. Analytics API を有効化
 3. サービスアカウントを作成し、JSONキーをダウンロード
-4. GA4プロパティとSearch Consoleのプロパティにサービスアカウントを追加（閲覧権限）
+4. GA4プロパティにサービスアカウントを追加（閲覧権限）
 5. JSONキーを `credentials/service-account.json` に配置
 6. `.env` に `GOOGLE_CREDENTIALS_PATH=credentials/service-account.json` を記載
 
@@ -168,8 +157,7 @@ python -m build_in_public generate --week 2026-W23 --force
 2. config.yaml と .env の読み込み
 3. Google認証（サービスアカウントJSON）
 4. GA4データ取得（指定期間）
-5. Search Consoleデータ取得（指定期間）
-6. 前週データ読み込み（data/archive/）
+5. 前週データ読み込み（data/archive/）
 7. 前週比計算
 8. データをMarkdown形式に整形
 9. Few-shot例を読み込み
@@ -208,12 +196,6 @@ posts/YYYY-MM-DD.md
   1. `/blog/ai-tool` — 345 views
   2. `/about` — 128 views
   3. `/` — 98 views
-- **Search Console**:
-  - Clicks: 89
-  - Impressions: 1,234
-  - Avg Position: 12.4
-  - Top Query: "nextjs tutorial" (45 clicks)
-
 ## 📝 Post Drafts
 
 ### Pattern A: Straight (levelsio風)
@@ -239,7 +221,6 @@ posts/YYYY-MM-DD.md
 ```yaml
 site_name: "YourSite"
 ga4_property_id: "123456789"
-search_console_site_url: "sc-domain:example.com"
 language: "ja"
 default_tone: "levelsio"
 posts_dir: "posts"
@@ -290,8 +271,7 @@ build-in-public-assistant/
 │       ├── config.py                    # config.yaml / .env の読み込み
 │       ├── analytics/
 │       │   ├── __init__.py
-│       │   ├── ga4.py                   # GA4 Data API クライアント
-│       │   └── search_console.py        # Search Console API クライアント
+│       │   └── ga4.py                   # GA4 Data API クライアント
 │       ├── llm/
 │       │   ├── __init__.py
 │       │   ├── client.py                # OpenRouter API クライアント

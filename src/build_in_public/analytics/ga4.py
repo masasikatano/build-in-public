@@ -42,7 +42,7 @@ def fetch_ga4_data(
             Metric(name="screenPageViews"),
             Metric(name="sessions"),
             Metric(name="totalUsers"),
-            Metric(name="averageEngagementTimePerSession"),
+            Metric(name="averageSessionDuration"),
         ],
     )
 

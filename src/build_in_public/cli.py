@@ -1,11 +1,10 @@
 import argparse
 import sys
-from datetime import date, timedelta
+from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from build_in_public.analytics.ga4 import fetch_ga4_data, get_client as get_ga4_client
-from build_in_public.analytics.search_console import fetch_search_console_data, get_service as get_sc_service
 from build_in_public.config import load_config, load_env, validate_config
 from build_in_public.llm.client import call_llm
 from build_in_public.llm.prompt_builder import build_user_prompt, load_system_prompt, parse_post_patterns
@@ -36,18 +35,13 @@ def generate_command(args: argparse.Namespace) -> None:
     ga4_client = get_ga4_client(creds_path)
     ga4_data = fetch_ga4_data(ga4_client, settings["ga4_property_id"], start, end)
 
-    print("Fetching Search Console data...")
-    sc_service = get_sc_service(creds_path)
-    sc_data = fetch_search_console_data(sc_service, settings["search_console_site_url"], start, end)
-
     # Load previous week data
     print("Loading previous week data...")
     prev_start = start - timedelta(days=7)
     prev_ga4 = load_week_data(settings["archive_dir"], prev_start)
-    prev_sc = load_week_data(settings["archive_dir"], prev_start)
 
     # Analytics summary markdown
-    analytics_summary = build_analytics_summary(ga4_data, sc_data, prev_ga4, prev_sc)
+    analytics_summary = build_analytics_summary(ga4_data, prev_ga4)
 
     # Few-shot & prompt
     print("Building prompt...")
@@ -82,11 +76,6 @@ def generate_command(args: argparse.Namespace) -> None:
     notes: List[str] = []
     if ga4_data.get("pv", 0) < 100:
         notes.append("今週はデータ少なめなので控えめに")
-    top_queries = sc_data.get("top_queries", [])
-    if len(top_queries) >= 2:
-        q1, q2 = top_queries[0], top_queries[1]
-        if q1.get("clicks", 0) > 0 and q2.get("clicks", 0) > 0:
-            notes.append(f"「{q1['query']}」が急上昇中 → 言及推奨")
 
     # Write report
     report_path = write_report(
@@ -105,7 +94,6 @@ def generate_command(args: argparse.Namespace) -> None:
         "start": start.isoformat(),
         "end": end.isoformat(),
         "ga4": ga4_data,
-        "search_console": sc_data,
     }
     save_week_data(settings["archive_dir"], start, archive_data)
     print("Archive saved.")

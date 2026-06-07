@@ -32,7 +32,7 @@ def load_env() -> dict:
 
 
 def validate_config(config: dict, env: dict) -> dict:
-    required = ["site_name", "ga4_property_id", "search_console_site_url"]
+    required = ["site_name", "ga4_property_id"]
     for field in required:
         if not config.get(field):
             print(f"Config Error: {field} is required in config.yaml", file=sys.stderr)

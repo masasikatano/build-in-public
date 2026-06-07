@@ -2,7 +2,38 @@
 
 自分のX（Twitter）アカウントをBuild in Publicに変えるための、週次レポート・ポスト生成支援CLIツール。
 
-制作中のサイトの分析データ（Google Analytics 4 / Search Console）を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成します。
+制作中のサイトの分析データ（Google Analytics 4）を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成します。
+
+---
+
+## プロジェクト構成
+
+```
+build-in-public/
+├── src/build_in_public/       # メインソースコード
+│   ├── __main__.py             # python -m build_in_public エントリポイント
+│   ├── cli.py                  # コマンドライン引数処理
+│   ├── config.py               # 設定ファイル読み込み
+│   ├── analytics/
+│   │   └── ga4.py              # GA4 Data API クライアント
+│   ├── llm/
+│   │   ├── client.py           # OpenRouter API クライアント
+│   │   └── prompt_builder.py   # プロンプト構築
+│   ├── utils/
+│   │   ├── archive_manager.py  # データアーカイブ管理
+│   │   └── date_helpers.py     # 日付・週計算
+│   └── writers/
+│       └── markdown_writer.py  # Markdownレポート生成
+├── prompts/                    # LLMプロンプトテンプレート
+├── examples/                   # Few-shot例文
+├── posts/                      # 生成されたレポート（Git管理）
+├── data/archive/               # 週次データのJSON保存
+├── credentials/                # サービスアカウントJSON（.gitignore）
+├── config.yaml                 # サイト設定
+├── .env                        # 環境変数（.gitignore）
+├── .env.example                # 環境変数テンプレート
+└── pyproject.toml              # 依存関係管理
+```
 
 ---
 
@@ -12,7 +43,7 @@
 
 - Python 3.11+
 - [OpenRouter](https://openrouter.ai/) の API キー
-- Google Cloud プロジェクト（GA4 / Search Console API 有効化済み）
+- Google Cloud プロジェクト（GA4 API 有効化済み）
 
 ### 2. インストール
 
@@ -36,8 +67,7 @@ pip install -e .
 
 ```yaml
 site_name: "MySite"
-ga4_property_id: "123456789"                      # GA4 プロパティID
-search_console_site_url: "sc-domain:example.com"  # または "https://example.com/"
+ga4_property_id: "123456789"  # GA4 プロパティID
 language: "ja"
 default_tone: "levelsio"
 posts_dir: "posts"
@@ -78,17 +108,15 @@ LLM_MODEL=anthropic/claude-3.5-sonnet
 #### 4.2 API を有効化
 
 1. ナビゲーションメニュー（≡）→ **「APIとサービス」** → **「ライブラリ」**
-2. 以下の2つのAPIを検索して、それぞれ **「有効にする」** をクリック:
-  - **Google Analytics Data API**
-  - **Google Search Console API**
+2. **Google Analytics Data API** を検索して **「有効にする」** をクリック
 
 #### 4.3 サービスアカウントを作成
 
 1. ナビゲーションメニュー → **「IAMと管理」** → **「サービスアカウント」**
 2. **「サービスアカウントを作成」** をクリック
 3. **ステップ1**: サービスアカウント名を入力（例: `build-in-public`）
-  - サービスアカウントIDが自動生成されます
-  - **「作成して続行」** をクリック
+   - サービスアカウントIDが自動生成されます
+   - **「作成して続行」** をクリック
 4. **ステップ2**: ロールの付与は不要なので **「完了」** をクリック
 
 #### 4.4 JSON キーを作成・ダウンロード
@@ -106,21 +134,24 @@ cp ~/Downloads/build-in-public-xxxxxxxx.json credentials/service-account.json
 
 #### 4.5 GA4 に権限を付与
 
-1. [Google Analytics](https://analytics.google.com/) にアクセス
-2. 対象のプロパティを開く
-3. 左下の歯車アイコン → **「プロパティ」** → **「プロパティのアクセス権限の管理」**
-4. **「アクセス権限を付与する」** をクリック
-5. サービスアカウントのメールアドレス（例: `build-in-public@your-project.iam.gserviceaccount.com`）を入力
-6. ロールを **「閲覧者」** に設定し、**「追加」**
+> [!IMPORTANT]
+> 現在、GA4の管理画面（UI）から直接サービスアカウントのメールアドレス（`@*.iam.gserviceaccount.com`）を追加しようとすると、エラーが発生して追加できない不具合があります。そのため、以下の通り **Google Analytics Admin API Explorer** を使用して権限を付与します。
 
-#### 4.6 Search Console に権限を付与
-
-1. [Google Search Console](https://search.google.com/search-console) にアクセス
-2. 対象のプロパティを選択
-3. 左メニューの歯車アイコン → **「ユーザーと権限」**
-4. **「ユーザーを追加」** をクリック
-5. サービスアカウントのメールアドレスを入力
-6. 権限を **「閲覧者」** に設定し、**「追加」**
+1. [Google Analytics Admin API Explorer (properties.accessBindings.create)](https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1alpha/properties.accessBindings/create) にアクセス
+2. 画面右側の **「Try this API」** 枠内にパラメータを入力:
+   - `**parent`**: `properties/【あなたのGA4プロパティID】` (例: `properties/123456789`)
+3. **Request body** のJSON入力欄（またはフィールド）を以下の通りに編集:
+   ```json
+   {
+     "user": "【あなたのサービスアカウントのメールアドレス】",
+     "roles": [
+       "predefinedRoles/viewer"
+     ]
+   }
+   ```
+4. **「Google OAuth 2.0」** にチェックが入っていることを確認し、**「Execute」** ボタンをクリック
+5. 対象のGA4プロパティの「管理者」権限を持つGoogleアカウントでサインインし、アクセスを許可
+6. Responseコードが `200`（成功）となることを確認
 
 ### 5. 実行
 
@@ -138,6 +169,8 @@ python3 -m build_in_public generate --date 2026-06-01
 python3 -m build_in_public generate --force
 ```
 
+> `build-in-public generate` としても実行できます（`pyproject.toml` でエイリアス登録済み）。
+
 ### 6. 出力結果
 
 実行後、以下が生成されます:
@@ -147,15 +180,12 @@ python3 -m build_in_public generate --force
 
 ### トラブルシューティング
 
-
-| エラー                                        | 対処法                                        |
-| ------------------------------------------ | ------------------------------------------ |
-| `Config Error: config.yaml not found`      | リポジトリのルートに `config.yaml` があるか確認            |
-| `Config Error: Credentials file not found` | `credentials/service-account.json` を配置     |
-| `GA4 API Error: 認証情報を確認してください`             | サービスアカウントにGA4の閲覧権限があるか確認                   |
-| `Search Console API Error`                 | サイトURLの形式を確認 (`sc-domain:` または `https://`) |
-| `LLM Error`                                | `.env` の `OPENROUTER_API_KEY` が正しいか確認      |
-
+| エラー | 対処法 |
+|---|---|
+| `Config Error: config.yaml not found` | リポジトリのルートに `config.yaml` があるか確認 |
+| `Config Error: Credentials file not found` | `credentials/service-account.json` を配置 |
+| `GA4 API Error: 認証情報を確認してください` | サービスアカウントにGA4の閲覧権限があるか確認 |
+| `LLM Error` | `.env` の `OPENROUTER_API_KEY` が正しいか確認 |
 
 ---
 
