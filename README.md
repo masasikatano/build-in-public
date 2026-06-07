@@ -1,8 +1,8 @@
 # Build in Public Assistant
 
-自分のX（Twitter）アカウントをBuild in Publicに変えるための、週次レポート・ポスト生成支援CLIツール。
+自分のX（Twitter）アカウントをBuild in Publicに変えるための、週次・日次レポート・ポスト生成支援CLIツール。
 
-制作中のサイトの分析データ（Google Analytics 4）を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成します。
+制作中のサイトの分析データ（Google Analytics 4）とGitHubコミット履歴を自動取得し、indie hackerのBuild in PublicのプロであるPieter Levels（@levelsio）の文体を参考に、Xへのポスト案をLLMで生成します。
 
 ---
 
@@ -16,6 +16,9 @@ build-in-public/
 │   ├── config.py               # 設定ファイル読み込み
 │   ├── analytics/
 │   │   └── ga4.py              # GA4 Data API クライアント
+│   ├── github/                 # GitHub API クライアント（日次レポート用）
+│   │   ├── client.py
+│   │   └── formatter.py
 │   ├── llm/
 │   │   ├── client.py           # OpenRouter API クライアント
 │   │   └── prompt_builder.py   # プロンプト構築
@@ -27,6 +30,7 @@ build-in-public/
 ├── prompts/                    # LLMプロンプトテンプレート
 ├── examples/                   # Few-shot例文
 ├── posts/                      # 生成されたレポート（Git管理）
+│   └── daily/                  # 日次GitHubレポート
 ├── data/archive/               # 週次データのJSON保存
 ├── credentials/                # サービスアカウントJSON（.gitignore）
 ├── config.yaml                 # サイト設定
@@ -44,6 +48,7 @@ build-in-public/
 - Python 3.11+
 - [OpenRouter](https://openrouter.ai/) の API キー
 - Google Cloud プロジェクト（GA4 API 有効化済み）
+- GitHub パーソナルアクセストークン（日次レポートを使う場合は任意ですが、設定推奨）
 
 ### 2. インストール
 
@@ -70,6 +75,7 @@ site_name: "MySite"
 site_url: "https://example.com"              # サイトURL（ポストに含まれる）
 site_description: "自分のサービスの説明文"    # サイト紹介（1文。ポストに含まれる）
 ga4_property_id: "123456789"                 # GA4 プロパティID
+github_repo: "owner/repo"                    # 日次レポート対象のGitHubリポジトリ
 language: "ja"
 default_tone: "levelsio"
 posts_dir: "posts"
@@ -89,6 +95,9 @@ cp .env.example .env
 ```bash
 # Google Auth
 GOOGLE_CREDENTIALS_PATH=credentials/service-account.json
+
+# GitHub (Optional)
+# GITHUB_TOKEN=ghp_xxxxxxxx  # 設定するとAPIレート制限が緩和されます
 
 # OpenRouter
 OPENROUTER_API_KEY=sk-or-v1-xxxxxxxx
@@ -157,6 +166,8 @@ cp ~/Downloads/build-in-public-xxxxxxxx.json credentials/service-account.json
 
 ### 5. 実行
 
+#### 週次レポート（GA4）
+
 ```bash
 # 先週のレポートを生成（デフォルト）
 python3 -m build_in_public generate
@@ -173,12 +184,30 @@ python3 -m build_in_public generate --force
 
 > `build-in-public generate` としても実行できます（`pyproject.toml` でエイリアス登録済み）。
 
+#### 日次レポート（GitHubコミット）
+
+```bash
+# 今日のコミットでレポート生成（デフォルト）
+python3 -m build_in_public github
+
+# 特定の日付を指定
+python3 -m build_in_public github --date 2026-06-06
+
+# 既存ファイルを強制上書き
+python3 -m build_in_public github --date 2026-06-06 --force
+```
+
 ### 6. 出力結果
 
-実行後、以下が生成されます:
+#### 週次レポート
 
 - `posts/YYYY-MM-DD.md` — レポート（Xポスト案3パターン含む）
 - `data/archive/YYYY-MM-DD.json` — 生データのアーカイブ
+
+#### 日次レポート
+
+- `posts/daily/YYYY-MM-DD.md` — レポート（Xポスト案3パターン＋コミット詳細）
+- `data/archive/github-YYYY-MM-DD.json` — 生データのアーカイブ
 
 ### トラブルシューティング
 
@@ -186,7 +215,9 @@ python3 -m build_in_public generate --force
 |---|---|
 | `Config Error: config.yaml not found` | リポジトリのルートに `config.yaml` があるか確認 |
 | `Config Error: Credentials file not found` | `credentials/service-account.json` を配置 |
+| `Config Error: github_repo is required` | `config.yaml` に `github_repo` が設定されているか確認 |
 | `GA4 API Error: 認証情報を確認してください` | サービスアカウントにGA4の閲覧権限があるか確認 |
+| `GitHub API rate limit exceeded` | `.env` に `GITHUB_TOKEN` を設定してください |
 | `LLM Error` | `.env` の `OPENROUTER_API_KEY` が正しいか確認 |
 
 ---
