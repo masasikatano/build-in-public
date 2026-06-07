@@ -1,4 +1,5 @@
 site_name: "YourSite"
+site_url: "https://example.com"
 ga4_property_id: "123456789"
 language: "ja"
 default_tone: "levelsio"

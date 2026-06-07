@@ -50,6 +50,8 @@ def generate_command(args: argparse.Namespace) -> None:
         settings["prompts_dir"],
         settings["examples_file"],
         analytics_summary,
+        site_name=settings.get("site_name", ""),
+        site_url=settings.get("site_url", ""),
     )
 
     # Call LLM
@@ -65,12 +67,13 @@ def generate_command(args: argparse.Namespace) -> None:
     if not all(patterns):
         print("Warning: Some post patterns could not be parsed. Using raw response fallback.", file=sys.stderr)
         # 最低限フォールバック
+        fallback = raw_response or ""
         if not patterns[0]:
-            patterns[0] = raw_response[:280]
+            patterns[0] = fallback[:280]
         if not patterns[1]:
-            patterns[1] = raw_response[280:560] if len(raw_response) > 280 else ""
+            patterns[1] = fallback[280:560] if len(fallback) > 280 else ""
         if not patterns[2]:
-            patterns[2] = raw_response[560:840] if len(raw_response) > 560 else ""
+            patterns[2] = fallback[560:840] if len(fallback) > 560 else ""
 
     # Notes
     notes: List[str] = []

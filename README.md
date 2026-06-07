@@ -67,7 +67,8 @@ pip install -e .
 
 ```yaml
 site_name: "MySite"
-ga4_property_id: "123456789"  # GA4 プロパティID
+site_url: "https://example.com"  # サイトURL（ポストに含まれる）
+ga4_property_id: "123456789"     # GA4 プロパティID
 language: "ja"
 default_tone: "levelsio"
 posts_dir: "posts"

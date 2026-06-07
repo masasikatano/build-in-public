@@ -35,7 +35,13 @@ def call_llm(
             )
             response.raise_for_status()
             data = response.json()
-            content = data["choices"][0]["message"]["content"]
+            content = data.get("choices", [{}])[0].get("message", {}).get("content")
+            if content is None:
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                print("LLM Error: API returned empty content.", file=sys.stderr)
+                sys.exit(1)
             return content
         except requests.exceptions.HTTPError as e:
             if response.status_code == 429:

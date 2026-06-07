@@ -41,20 +41,26 @@ def build_user_prompt(
     prompts_dir: str,
     examples_file: str,
     analytics_summary: str,
+    site_name: str = "",
+    site_url: str = "",
 ) -> str:
     template = load_generate_template(prompts_dir)
     few_shot = load_few_shot_examples(examples_file)
     return template.render(
         analytics_summary=analytics_summary,
         few_shot_examples=few_shot,
+        site_name=site_name,
+        site_url=site_url,
     )
 
 
-def parse_post_patterns(content: str) -> List[str]:
+def parse_post_patterns(content: str | None) -> List[str]:
     """
     LLMのレスポンスから3パターンを抽出する。
     Pattern A / Pattern B / Pattern C の見出しに続く本文を取得。
     """
+    if not content:
+        return ["", "", ""]
     patterns = []
     for label in ["Pattern A", "Pattern B", "Pattern C"]:
         regex = rf"####?\s*{re.escape(label)}.*?\n+(.+?)(?=####?\s*Pattern|$)"
